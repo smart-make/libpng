@@ -1,0 +1,7 @@
+/smart
+/smart.backup.*
+/smart.e.backup.*
+png.a
+*.o
+pnglibconf.h
+*~
