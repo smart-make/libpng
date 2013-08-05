@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2013 John Cunningham Bowler
  *
- * Last changed in libpng 1.6.0 [February 14, 2013]
+ * Last changed in libpng 1.6.1 [March 28, 2013]
  *
  * This code is released under the libpng license.
  * For conditions of distribution and use, see the disclaimer
@@ -22,7 +22,7 @@
 
 #include <time.h>
 
-#if (defined HAVE_CONFIG_H) && !(defined PNG_NO_CONFIG_H)
+#if defined(HAVE_CONFIG_H) && !defined(PNG_NO_CONFIG_H)
 #  include <config.h>
 #endif
 
@@ -252,7 +252,7 @@ int main(int argc, char **argv)
 
          while (fgets(filename, FILENAME_MAX+1, stdin))
          {
-            int len = strlen(filename);
+            size_t len = strlen(filename);
 
             if (filename[len-1] == '\n')
             {

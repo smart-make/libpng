@@ -1,7 +1,7 @@
 
 /* pngset.c - storage of image information into info struct
  *
- * Last changed in libpng 1.6.0 [February 14, 2013]
+ * Last changed in libpng 1.6.3 [July 18, 2013]
  * Copyright (c) 1998-2013 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
@@ -238,16 +238,7 @@ png_set_IHDR(png_const_structrp png_ptr, png_inforp info_ptr,
 
    info_ptr->pixel_depth = (png_byte)(info_ptr->channels * info_ptr->bit_depth);
 
-   /* Check for potential overflow */
-   if (width >
-       (PNG_UINT_32_MAX >> 3)      /* 8-byte RRGGBBAA pixels */
-       - 48       /* bigrowbuf hack */
-       - 1        /* filter byte */
-       - 7*8      /* rounding of width to multiple of 8 pixels */
-       - 8)       /* extra max_pixel_depth pad */
-      info_ptr->rowbytes = 0;
-   else
-      info_ptr->rowbytes = PNG_ROWBYTES(info_ptr->pixel_depth, width);
+   info_ptr->rowbytes = PNG_ROWBYTES(info_ptr->pixel_depth, width);
 }
 
 #ifdef PNG_oFFs_SUPPORTED
@@ -514,7 +505,7 @@ png_set_PLTE(png_structrp png_ptr, png_inforp info_ptr,
 
    png_debug1(1, "in %s storage function", "PLTE");
 
-   if (png_ptr == NULL || info_ptr == NULL || palette == NULL)
+   if (png_ptr == NULL || info_ptr == NULL)
       return;
 
    if (num_palette < 0 || num_palette > PNG_MAX_PALETTE_LENGTH)
@@ -527,6 +518,17 @@ png_set_PLTE(png_structrp png_ptr, png_inforp info_ptr,
          png_warning(png_ptr, "Invalid palette length");
          return;
       }
+   }
+
+   if ((num_palette > 0 && palette == NULL) ||
+      (num_palette == 0
+#        ifdef PNG_MNG_FEATURES_SUPPORTED
+            && (png_ptr->mng_features_permitted & PNG_FLAG_MNG_EMPTY_PLTE) == 0
+#        endif
+      ))
+   {
+      png_chunk_report(png_ptr, "Invalid palette", PNG_CHUNK_ERROR);
+      return;
    }
 
    /* It may not actually be necessary to set png_ptr->palette here;
@@ -545,7 +547,8 @@ png_set_PLTE(png_structrp png_ptr, png_inforp info_ptr,
    png_ptr->palette = png_voidcast(png_colorp, png_calloc(png_ptr,
        PNG_MAX_PALETTE_LENGTH * (sizeof (png_color))));
 
-   memcpy(png_ptr->palette, palette, num_palette * (sizeof (png_color)));
+   if (num_palette > 0)
+      memcpy(png_ptr->palette, palette, num_palette * (sizeof (png_color)));
    info_ptr->palette = png_ptr->palette;
    info_ptr->num_palette = png_ptr->num_palette = (png_uint_16)num_palette;
 
@@ -1116,16 +1119,16 @@ png_set_unknown_chunks(png_const_structrp png_ptr,
     * code) but may be meaningless if the read or write handling of unknown
     * chunks is not compiled in.
     */
-#  if !(defined PNG_READ_UNKNOWN_CHUNKS_SUPPORTED) && \
-      (defined PNG_READ_SUPPORTED)
+#  if !defined(PNG_READ_UNKNOWN_CHUNKS_SUPPORTED) && \
+      defined(PNG_READ_SUPPORTED)
       if (png_ptr->mode & PNG_IS_READ_STRUCT)
       {
          png_app_error(png_ptr, "no unknown chunk support on read");
          return;
       }
 #  endif
-#  if !(defined PNG_WRITE_UNKNOWN_CHUNKS_SUPPORTED) && \
-      (defined PNG_WRITE_SUPPORTED)
+#  if !defined(PNG_WRITE_UNKNOWN_CHUNKS_SUPPORTED) && \
+      defined(PNG_WRITE_SUPPORTED)
       if (!(png_ptr->mode & PNG_IS_READ_STRUCT))
       {
          png_app_error(png_ptr, "no unknown chunk support on write");

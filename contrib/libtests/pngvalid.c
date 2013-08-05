@@ -1,7 +1,7 @@
 
 /* pngvalid.c - validate libpng by constructing then reading png files.
  *
- * Last changed in libpng 1.6.0 [February 14, 2013]
+ * Last changed in libpng 1.6.1 [March 28, 2013]
  * Copyright (c) 2013 Glenn Randers-Pehrson
  * Written by John Cunningham Bowler
  *
@@ -26,7 +26,7 @@
 #include <signal.h>
 #include <stdio.h>
 
-#if (defined HAVE_CONFIG_H) && !(defined PNG_NO_CONFIG_H)
+#if defined(HAVE_CONFIG_H) && !defined(PNG_NO_CONFIG_H)
 #  include <config.h>
 #endif
 
@@ -1999,8 +1999,8 @@ static double digitize(PNG_CONST png_modifier *pm, double value,
 }
 #endif
 
-#if (defined PNG_READ_GAMMA_SUPPORTED) ||\
-   (defined PNG_READ_RGB_TO_GRAY_SUPPORTED)
+#if defined(PNG_READ_GAMMA_SUPPORTED) ||\
+   defined(PNG_READ_RGB_TO_GRAY_SUPPORTED)
 static double abserr(PNG_CONST png_modifier *pm, int in_depth, int out_depth)
 {
    /* Absolute error permitted in linear values - affected by the bit depth of
@@ -3357,7 +3357,7 @@ make_transform_image(png_store* PNG_CONST ps, png_byte PNG_CONST colour_type,
          PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
 #ifdef PNG_TEXT_SUPPORTED
-#  if (defined PNG_READ_zTXt_SUPPORTED) && (defined PNG_WRITE_zTXt_SUPPORTED)
+#  if defined(PNG_READ_zTXt_SUPPORTED) && defined(PNG_WRITE_zTXt_SUPPORTED)
 #     define TEXT_COMPRESSION PNG_TEXT_COMPRESSION_zTXt
 #  else
 #     define TEXT_COMPRESSION PNG_TEXT_COMPRESSION_NONE
@@ -4599,9 +4599,13 @@ progressive_row(png_structp ppIn, png_bytep new_row, png_uint_32 y, int pass)
       }
       else
          png_progressive_combine_row(pp, row, new_row);
-   } else if (dp->interlace_type == PNG_INTERLACE_ADAM7 &&
-      PNG_ROW_IN_INTERLACE_PASS(y, pass) &&
-      PNG_PASS_COLS(dp->w, pass) > 0)
+#endif /* PNG_READ_INTERLACING_SUPPORTED */
+   }
+
+#ifdef PNG_READ_INTERLACING_SUPPORTED
+   else if (dp->interlace_type == PNG_INTERLACE_ADAM7 &&
+       PNG_ROW_IN_INTERLACE_PASS(y, pass) &&
+       PNG_PASS_COLS(dp->w, pass) > 0)
       png_error(pp, "missing row in progressive de-interlacing");
 #endif /* PNG_READ_INTERLACING_SUPPORTED */
 }
@@ -8895,8 +8899,8 @@ static void perform_gamma_scale16_tests(png_modifier *pm)
 }
 #endif /* 16 to 8 bit conversion */
 
-#if defined PNG_READ_BACKGROUND_SUPPORTED ||\
-   defined PNG_READ_ALPHA_MODE_SUPPORTED
+#if defined(PNG_READ_BACKGROUND_SUPPORTED) ||\
+   defined(PNG_READ_ALPHA_MODE_SUPPORTED)
 static void gamma_composition_test(png_modifier *pm,
    PNG_CONST png_byte colour_type, PNG_CONST png_byte bit_depth,
    PNG_CONST int palette_number,
@@ -10135,6 +10139,7 @@ int main(int argc, char **argv)
 int main(void)
 {
    fprintf(stderr, "pngvalid: no write support in libpng, all tests skipped\n");
-   return 0;
+   /* So the test is skipped: */
+   return 77;
 }
 #endif
